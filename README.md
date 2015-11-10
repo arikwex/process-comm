@@ -1,38 +1,87 @@
-###########################################
-### INTER-PROCESS COMMUNICATION LIBRARY ###
-###########################################
+# Spawn Communication Library
 
-##################################
-# Example: Inter-process channel #
-##################################
-
+## Examples
+### Echo Client
+```coffeescript
 ### PARENT PROCESS ###
 IPC = require('process-comm')
-worker = IPC.spawn('node worker.js')
+worker = IPC.spawn('node', ['dist/worker.js'], cwd: process.cwd())
 
 worker.on('data', (data) ->
   console.log("Worker process says: #{data}")
 )
 worker.write('hello')
-
+```
+```coffeescript
 ### WORKER PROCESS ###
 IPC = require('process-comm')
 IPC.on('data', (data) ->
   IPC.write("#{data} to you too!")
 )
+```
 
-##################################
-# Example: Inter-process promise #
-##################################
-
+### Events
+```coffeescript
 ### PARENT PROCESS ###
 IPC = require('process-comm')
-worker = IPC.spawn('node worker.js')
+
+makeWorker = ->
+  console.log('Requesting new worker...')
+  _ival = null
+  worker = IPC.spawn('node', ['dist/worker2.js'], cwd: process.cwd())
+  worker.on('open', ->
+    console.log('worker open')
+  )
+  worker.on('log', (data) ->
+    console.log("worker log: #{data}")
+  )
+  worker.on('close', ->
+    console.log('worker closed')
+    clearInterval(_ival)
+    makeWorker()
+  )
+  _ival = setInterval(->
+    worker.emit('apply_data', ('' + Math.random()).toString(16).substring(2))
+  , 250)
+
+makeWorker()
+```
+```coffeescript
+### WORKER PROCESS ###
+IPC = require('process-comm')
+open = false
+
+setTimeout(->
+  open = true
+  IPC.emit('open', 1000)
+, 500)
+
+IPC.on('apply_data', (data) ->
+  if open
+    IPC.emit('log', "Sent: #{data}")
+)
+
+setTimeout(->
+  process.exit()
+, 2000)
+```
+
+### Promises
+```coffeescript
+### PARENT PROCESS ###
+IPC = require('process-comm')
+worker = IPC.spawn('node', ['dist/worker3.js'], cwd: process.cwd())
+
+worker.on('log', (data) ->
+  console.log(data)
+)
 
 p = worker.promise('add',
   A: 123
   B: 456
 )
+
+console.log('I can multitask!')
 
 q = worker.promise('mul',
   A: 123
@@ -40,61 +89,34 @@ q = worker.promise('mul',
 )
 
 p.then((data) ->
-  console.log("response: #{data}")
+  console.log("response add: #{data}")
 ).catch((err) ->
-  console.log("error: #{err}")
-).always((data) ->
-  console.log("always: #{data}")
+  console.log("error add: #{err}")
+).notify((progress) ->
+  console.log("notify add: #{progress}")
 )
 
 q.then((data) ->
-  console.log("response: #{data}")
+  console.log("response mul: #{data}")
 ).catch((err) ->
-  console.log("error: #{err}")
-).always((data) ->
-  console.log("always: #{data}")
+  console.log("error mul: #{err}")
+).notify((progress) ->
+  console.log("notify mul: #{progress}")
 )
-
+```
+```coffeescript
 ### WORKER PROCESS ###
 IPC = require('process-comm')
-IPC.on('defer', (defer, cmd, data) ->
-  if cmd  == 'add'
-    defer.resolve(data.A + data.B)
-  else
-    defer.reject('fail')
+
+IPC.defer('add', (defer, params) ->
+  for i in [1..10]
+    defer.notify("#{i * 10}%")
+  defer.resolve(params.A + params.B)
 )
 
-########################################
-# Example: Inter-process event emitter #
-########################################
-
-### PARENT PROCESS ###
-IPC = require('process-comm')
-serialport = IPC.spawn('node serialport.js')
-
-serialport.on('open', ->
-  console.log('serialport open')
+IPC.defer('mul', (defer, params) ->
+  for i in [1..10]
+    defer.notify("#{i * 10}%")
+  defer.resolve(params.A * params.B)
 )
-serialport.on('close', ->
-  console.log('serialport closed')
-)
-serialport.on('data', (data) ->
-  console.log("serialport data: #{data}")
-)
-setTimeout(->
-  serialport.emit('finished')
-, 5000)
-
-### WORKER PROCESS ###
-serialport = require('serialport')
-IPC = require('process-comm')
-
-serialport.on('open', -> IPC.emit('open'))
-serialport.on('close', -> IPC.emit('close'))
-serialport.on('data', (data) -> IPC.trigger('data', data))
-
-serialport.connect('/dev/ttyO0', 9600)
-
-IPC.on('finished', (data) ->
-  IPC.write("#{data} to you too!")
-)
+```
