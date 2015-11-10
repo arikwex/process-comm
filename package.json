@@ -1,0 +1,13 @@
+{
+  "name": "process-comm",
+  "version": "0.0.1",
+  "description": "Allows interprocess communication with deferred objects and events.",
+  "main": "index.js",
+  "authors": [
+    "Ariel Wexler github.com/arikwex"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "q": "^1.4.1"
+  }
+}
