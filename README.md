@@ -1,6 +1,9 @@
 # Spawn Communication Library
 ## Purpose
-Sometimes, you want your node application to spawn child processes.  This library makes communication with child processes easy with familiar API calls.
+This library makes communication with child processes easy with familiar API calls.  The standard child process API provides a simple message passing protocol.  This library extends that base functionality to provide:
+- JSON Message passing
+- EventEmitter style event system
+- Deferred requests
 
 ## Setup (for development)
 ```bash
