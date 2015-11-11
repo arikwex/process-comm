@@ -22,17 +22,25 @@ exports.spawn = (command, args, options) ->
     return
   )
   workerSpawn.stderr.on('line', (buf) ->
-    if buf.length > 0
+    if String(buf).length > 0
       workerEvents.emit('error', String(buf))
     return
   )
   workerSpawn.stdout.on('close', ->
     workerEvents.emit('close')
+    for code, defer of workerDefers
+      defer.reject('close')
     connectionOpen = false
     workerEvents.removeAllListeners()
   )
 
   worker =
+    isAlive: ->
+      return connectionOpen
+    free: ->
+      workerSpawn.kill('SIGTERM')
+      connectionOpen = false
+      return
     write: (msg) ->
       worker.emit('data', msg)
       return
@@ -157,6 +165,8 @@ externalDefer = (code) ->
 
 # Packages a json message for a particular channel type
 makePackage = (type, msg) ->
+  if not msg?
+    msg = ''
   pkg =
     type: type
     params: msg

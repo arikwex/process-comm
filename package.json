@@ -2,12 +2,22 @@
   "name": "process-comm",
   "version": "0.0.1",
   "description": "Allows interprocess communication with deferred objects and events.",
-  "main": "index.js",
+  "main": "dist/process-comm.js",
   "authors": [
     "Ariel Wexler github.com/arikwex"
   ],
   "license": "MIT",
   "dependencies": {
     "q": "^1.4.1"
+  },
+  "devDependencies": {
+    "chai": "^3.4.1"
+  },
+  "scripts": {
+    "build": "npm run clean && npm run build-module && npm run build-tests",
+    "clean": "rm -rf dist/",
+    "build-module": "coffee -c -o dist/ src/",
+    "build-tests": "coffee -c -o dist/test/ test/",
+    "test": "npm run build && mocha dist/test/*.js"
   }
 }

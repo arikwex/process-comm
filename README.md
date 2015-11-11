@@ -2,6 +2,16 @@
 ## Purpose
 Sometimes, you want your node application to spawn child processes.  This library makes communication with child processes easy with familiar API calls.
 
+## Setup (for development)
+```bash
+npm install -g coffee
+npm install -g mocha
+npm install
+
+npm build  # Will rebuild the dist folder src and tests
+npm test   # Will build all code then run mocha tests in dist
+```
+
 ## API
 ### spawn (String command, String[ ] arguments, Object options)
 Spawns a child process and returns a special "worker" object.  This API call routes directly to the child_process.spawn method.
