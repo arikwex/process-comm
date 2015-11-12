@@ -11,8 +11,8 @@ npm install -g coffee
 npm install -g mocha
 npm install
 
-npm build  # Will rebuild the dist folder src and tests
-npm test   # Will build all code then run mocha tests in dist
+npm run build  # Will rebuild the dist folder src and tests
+npm run test   # Will build all code then run mocha tests in dist
 ```
 
 ## API
